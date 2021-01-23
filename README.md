@@ -1,3 +1,3 @@
-# boilerplate.ts
+# Snipe-IT_inventory-check
 
-My Typescript boilerplate
+> Checks if your current inventory is still correct
