@@ -5,6 +5,7 @@ import prompts from 'prompts';
 import chalk from 'chalk';
 import figlet from 'figlet';
 import ora from 'ora';
+import readline from 'readline';
 
 const conf = new configstore('ginit');
 
@@ -83,11 +84,13 @@ async function asyncFunction() {
   });
 
   assetArray.push({
+    // add stop to assetArray
     title: 'Stop',
     value: 'stop'
   });
 
   categoriesArray.push({
+    // add all to categoriesArray
     title: 'All',
     value: 'all'
   });
@@ -108,11 +111,59 @@ async function asyncFunction() {
     categoryID = value.category;
   });
 
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+  });
+
+  let x: boolean;
+  x = true;
+  // eslint-disable-next-line no-loops/no-loops
+  while (x) {
+    // eslint-disable-next-line no-await-in-loop
+    await prompts([
+      {
+        type: 'autocomplete',
+        name: 'AssetID',
+        message: 'Asset Tag (Stop to stop!)',
+        choices: assetArray,
+        limit: 20
+      }
+      // eslint-disable-next-line no-loop-func
+    ]).then(async (value) => {
+      console.log(`"${value.AssetID}"`);
+      if (value.AssetId === 'stop') {
+        console.log('The following assets are missing:');
+        console.log(assetArray);
+        rl.question('Want to add these the status missing? (y/n)', (answer) => {
+          switch (answer.toLowerCase()) {
+            case 'y':
+              console.log('added Missing status to assets');
+              // add logic to add status to assets in array
+              x = false;
+              break;
+            case 'n':
+              console.log('Cancelling...');
+              x = false;
+              break;
+            default:
+              console.log('Please enter (y/n)');
+          }
+          rl.close();
+        });
+      } else {
+        console.log('Hier moet nog logic komen, om entered asset uit array te halen');
+        x = false;
+      }
+    });
+  }
+
   // TODO
   // make user be able to enter asset tags and when they match remove from assetArray
   // In the end print which assets are missing
   // give them the label missing
   // Ask user if they have in fact entered everything? if not go back to entering asset tags
+  // fix package.json to include correct dependencies
 }
 
 asyncFunction();
