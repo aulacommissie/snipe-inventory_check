@@ -18,7 +18,7 @@ const spinner = ora({
 async function asyncFunction() {
   console.clear();
   console.log(
-    chalk.magenta(figlet.textSync('Snipe-IT\nInventory-check', { horizontalLayout: 'Default' }))
+    chalk.magenta(figlet.textSync('Snipe-IT\nInventory-check', { horizontalLayout: 'default' }))
   );
 
   if (!conf.get('snipeURL')) {
@@ -121,20 +121,21 @@ async function asyncFunction() {
   // eslint-disable-next-line no-loops/no-loops
   while (x) {
     // eslint-disable-next-line no-await-in-loop
-    await prompts([
+    const question = await prompts([
       {
         type: 'autocomplete',
         name: 'AssetID',
         message: 'Asset Tag (Stop to stop!)',
         choices: assetArray,
         limit: 20
-      }
-      // eslint-disable-next-line no-loop-func
-    ]).then(async (value) => {
-      console.log(`"${value.AssetID}"`);
-      if (value.AssetId === 'stop') {
+      }])
+    
+      console.log(`"${question.AssetID}"`);
+      if (question.AssetID === 'stop') {
         console.log('The following assets are missing:');
         console.log(assetArray);
+
+        // eslint-disable-next-line no-loop-func
         rl.question('Want to add these the status missing? (y/n)', (answer) => {
           if (answer.toLowerCase() === 'y') {
             console.log('added Missing status to assets');
@@ -152,7 +153,7 @@ async function asyncFunction() {
         console.log('Hier moet nog logic komen, om entered asset uit array te halen');
         x = false;
       }
-    });
+    
   }
 
   // TODO
