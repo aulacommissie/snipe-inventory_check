@@ -136,18 +136,15 @@ async function asyncFunction() {
         console.log('The following assets are missing:');
         console.log(assetArray);
         rl.question('Want to add these the status missing? (y/n)', (answer) => {
-          switch (answer.toLowerCase()) {
-            case 'y':
-              console.log('added Missing status to assets');
-              // add logic to add status to assets in array
-              x = false;
-              break;
-            case 'n':
-              console.log('Cancelling...');
-              x = false;
-              break;
-            default:
-              console.log('Please enter (y/n)');
+          if (answer.toLowerCase() === 'y') {
+            console.log('added Missing status to assets');
+            // add logic to add status to assets in array
+            x = false;
+          } else if (answer.toLowerCase() === 'n') {
+            console.log('Cancelling...');
+            x = false;
+          } else {
+            console.log('Please enter (y/n)');
           }
           rl.close();
         });
