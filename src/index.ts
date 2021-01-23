@@ -87,10 +87,32 @@ async function asyncFunction() {
     value: 'stop'
   });
 
-  categories.push({
+  categoriesArray.push({
     title: 'All',
     value: 'all'
   });
+
+  let categoryID: any;
+
+  spinner.stop();
+
+  await prompts([
+    {
+      type: 'autocomplete',
+      name: 'category',
+      message: 'Category (All for checking all!)',
+      choices: categoriesArray,
+      limit: 15
+    }
+  ]).then(async (value) => {
+    categoryID = value.category;
+  });
+
+  // TODO
+  // make user be able to enter asset tags and when they match remove from assetArray
+  // In the end print which assets are missing
+  // give them the label missing
+  // Ask user if they have in fact entered everything? if not go back to entering asset tags
 }
 
 asyncFunction();
