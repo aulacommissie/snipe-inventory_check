@@ -1,11 +1,10 @@
 #!/usr/bin/env node
 import configstore from 'configstore'; // config
-import { Snipe } from 'snipe-it.js';
+import { Snipe, StatusLabel } from 'snipe-it.js';
 import prompts from 'prompts';
 import chalk from 'chalk';
 import figlet from 'figlet';
 import ora from 'ora';
-import readline from 'readline';
 
 const conf = new configstore('ginit');
 
@@ -52,10 +51,12 @@ async function asyncFunction() {
 
   let assets;
   let categories;
+  let status;
 
   try {
     assets = await snipe.hardware.get({ limit: 10000 }); // retrieve all the assets
     categories = await snipe.categories.get({ limit: 10000 }); // retrieve all the categories
+    status = await snipe.statuslabels.get({ limit: 10000 }); // retrieve all statuses
   } catch (err) {
     spinner.stop();
     console.log(
@@ -66,13 +67,17 @@ async function asyncFunction() {
     conf.clear();
     process.exit();
   }
-  const assetArray: { title: string; value: any }[] = [];
-  const categoriesArray: { title: string; value: any }[] = [];
+
+  let assetArray: { title: string; value: number | string | null; category: string }[] = [];
+  const categoriesArray: { title: string; value: number | string | null }[] = [];
+  const statusArray: { title: string; value: number | string | null }[] = [];
+  console.log(statusArray);
 
   assets.forEach((hardware) => {
     assetArray.push({
       title: `${hardware.asset_tag} | ${hardware.name}`,
-      value: hardware.id
+      value: hardware.id,
+      category: hardware.category.id
     });
   });
 
@@ -83,10 +88,19 @@ async function asyncFunction() {
     });
   });
 
+  status.forEach((StatusLabel) => {
+    statusArray.push({
+      title: StatusLabel.name,
+      value: StatusLabel.id
+    });
+  });
+
+  console.log(statusArray);
   assetArray.push({
     // add stop to assetArray
     title: 'Stop',
-    value: 'stop'
+    value: 'stop',
+    category: 'stop'
   });
 
   categoriesArray.push({
@@ -95,9 +109,24 @@ async function asyncFunction() {
     value: 'all'
   });
 
-  let categoryID: any;
+  statusArray.push({
+    title: 'Add "Missing"',
+    value: 'add'
+  });
+
+  let categoryID: number | string;
 
   spinner.stop();
+
+  await prompts([
+    {
+      type: 'autocomplete',
+      name: 'status',
+      message: 'Choose which statuslabel to use for missing, else choose "Add Missing"',
+      choices: statusArray,
+      limit: 10
+    }
+  ]);
 
   await prompts([
     {
@@ -111,10 +140,11 @@ async function asyncFunction() {
     categoryID = value.category;
   });
 
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout
-  });
+  if (categoryID !== 'all') {
+    assetArray = assetArray.filter(
+      (array) => array.category === categoryID || array.category === 'stop'
+    );
+  }
 
   let x: boolean;
   x = true;
@@ -128,37 +158,47 @@ async function asyncFunction() {
         message: 'Asset Tag (Stop to stop!)',
         choices: assetArray,
         limit: 20
-      }])
-    
-      console.log(`"${question.AssetID}"`);
-      if (question.AssetID === 'stop') {
-        console.log('The following assets are missing:');
-        console.log(assetArray);
-
-        // eslint-disable-next-line no-loop-func
-        rl.question('Want to add these the status missing? (y/n)', (answer) => {
-          if (answer.toLowerCase() === 'y') {
-            console.log('added Missing status to assets');
-            // add logic to add status to assets in array
-            x = false;
-          } else if (answer.toLowerCase() === 'n') {
-            console.log('Cancelling...');
-            x = false;
-          } else {
-            console.log('Please enter (y/n)');
-          }
-          rl.close();
-        });
-      } else {
-        console.log('Hier moet nog logic komen, om entered asset uit array te halen');
-        x = false;
       }
-    
+    ]);
+
+    if (question.AssetID === 'stop') {
+      console.log('The following assets are missing:');
+      console.log(assetArray);
+
+      // eslint-disable-next-line no-await-in-loop
+      const response = await prompts({
+        type: 'select',
+        name: 'StopChoice',
+        message: 'Choose an option',
+        choices: [
+          { title: 'Cancel without saving', value: 'stop' },
+          { title: 'I forgot to remove an asset', value: 'cancel' },
+          { title: 'Give these assets the category "Missing"', value: 'save' }
+        ],
+        initial: 1
+      });
+      if (response.StopChoice === 'stop') {
+        console.log('Stopping...');
+        x = false;
+      } else if (response.StopChoice === 'cancel') {
+        console.log('Returning back to asset changing');
+        question.AssetID = null;
+      } else if (response.StopChoice === 'save') {
+        console.log('Giving assets status "Missing"');
+        spinner.start('Sending requests to Snipe-IT');
+        spinner.stop();
+      }
+
+      // Ask if user is certain these are missing
+      // Ask if not go back to the input prompt
+      // If correct give them the status missing + quit script
+      // If cancel stop without saving
+    } else {
+      assetArray = assetArray.filter((array) => array.value !== question.AssetID);
+    }
   }
 
   // TODO
-  // make user be able to enter asset tags and when they match remove from assetArray
-  // In the end print which assets are missing
   // give them the label missing
   // Ask user if they have in fact entered everything? if not go back to entering asset tags
   // fix package.json to include correct dependencies
