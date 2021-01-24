@@ -6,7 +6,7 @@ import chalk from 'chalk';
 import figlet from 'figlet';
 import ora from 'ora';
 
-const conf = new configstore('ginit');
+const conf = new configstore('snipe-api');
 
 const spinner = ora({
   color: 'blue',
