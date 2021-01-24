@@ -1,3 +1,3 @@
-# Snipe-IT_inventory-check
+# snipe-inventory_check
 
 > Checks if your current inventory is still correct
